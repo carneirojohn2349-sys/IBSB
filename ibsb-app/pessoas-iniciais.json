@@ -1,0 +1,65 @@
+[
+ {
+  "id": "ze-filho",
+  "tipo": "lider",
+  "nome": "Pastor Zé Filho",
+  "funcao": "Pastor presidente",
+  "descricao": "",
+  "ordem": 1,
+  "foto": "fotos/ze-filho.jpg"
+ },
+ {
+  "id": "francisco-pompeu",
+  "tipo": "lider",
+  "nome": "Pr. Francisco Pompeu",
+  "funcao": "Pastor",
+  "descricao": "",
+  "ordem": 2,
+  "foto": "fotos/francisco-pompeu.jpg"
+ },
+ {
+  "id": "gleyson-barroso",
+  "tipo": "lider",
+  "nome": "Pr. Gleyson Barroso",
+  "funcao": "Pastor",
+  "descricao": "",
+  "ordem": 3,
+  "foto": "fotos/gleyson-barroso.jpg"
+ },
+ {
+  "id": "familia-vieira",
+  "tipo": "missionario",
+  "nome": "Família Vieira",
+  "funcao": "Japão",
+  "descricao": "Pr. Rafael e família.",
+  "ordem": 1,
+  "foto": "fotos/familia-vieira.jpg"
+ },
+ {
+  "id": "familia-helio",
+  "tipo": "missionario",
+  "nome": "Pr. Hélio e família",
+  "funcao": "Rio Grande do Sul",
+  "descricao": "",
+  "ordem": 2,
+  "foto": "fotos/familia-helio.jpg"
+ },
+ {
+  "id": "familia-helio",
+  "tipo": "missionario",
+  "nome": "Pr. Hélio e família",
+  "funcao": "Taquara, Rio Grande do Sul",
+  "descricao": "",
+  "ordem": 2,
+  "foto": "fotos/familia-helio.jpg"
+ },
+ {
+  "id": "familia-zenilson",
+  "tipo": "missionario",
+  "nome": "Pr. Zenilson e família",
+  "funcao": "São Gabriel da Cachoeira, Amazonas",
+  "descricao": "",
+  "ordem": 3,
+  "foto": "fotos/familia-zenilson.jpg"
+ }
+]

@@ -1,0 +1,73 @@
+rules_version = '2';
+// Regras de segurança do banco de dados do app IBSB.
+// Troque seu-email@gmail.com pelo e-mail do responsável (o mesmo do firebase-config.js).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function logado() { return request.auth != null; }
+    function dono() { return logado() && request.auth.token.email == 'carneirojohn2349@gmail.com'; }
+    function lider() { return dono() || (logado() && exists(/databases/$(database)/documents/admins/$(request.auth.uid))); }
+    function proprio(id) { return logado() && request.auth.uid == id; }
+
+    // Nome de cada membro
+    match /users/{id} {
+      allow read: if logado();
+      allow write: if proprio(id);
+    }
+
+    // Quem faz parte da liderança (só o responsável altera)
+    match /admins/{id} {
+      allow read: if logado();
+      allow write: if dono();
+    }
+
+    // Devocionais aprovados: todos leem, só a liderança publica
+    match /devocionais/{id} {
+      allow read: if true;
+      allow write: if lider();
+    }
+
+    // Liderança e missionários: todos leem, só a liderança edita
+    match /pessoas/{id} {
+      allow read: if true;
+      allow write: if lider();
+    }
+
+    // Relatórios missionários: todos leem, só a liderança publica
+    match /relatorios/{id} {
+      allow read: if true;
+      allow write: if lider();
+    }
+
+    // Liturgia (eventos e louvores): todos leem, só a liderança edita
+    match /eventos/{id} {
+      allow read: if true;
+      allow write: if lider();
+    }
+
+    // Fila de aprovação da liderança
+    match /pendentes/{id} {
+      allow read, write: if lider();
+    }
+
+    // Devocionais enviados por membros (cada um vê os seus; a liderança vê todos)
+    match /envios/{id} {
+      allow read, write: if proprio(id) || lider();
+    }
+
+    // Pedidos de oração, "vou orar" e comentários:
+    // membros logados leem; cada um escreve só os seus; a liderança pode moderar
+    match /pedidos/{id} {
+      allow read: if logado();
+      allow write: if proprio(id) || lider();
+    }
+    match /oracoes/{id} {
+      allow read: if logado();
+      allow write: if proprio(id);
+    }
+    match /comentarios/{id} {
+      allow read: if logado();
+      allow write: if proprio(id) || lider();
+    }
+  }
+}

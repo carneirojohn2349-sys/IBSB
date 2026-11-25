@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#041e41">
+<title>IBSB</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="IBSB">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calmo, acolhedor e reverente, como o boletim de uma igreja.
+   IDEA: o livro de bolso da igreja: Bíblia, hinário e mural de oração num só volume.
+   PICTURE: no início, o logotipo da IBSB em destaque sobre o versículo do dia.
+   COLOUR and TYPE: azul-marinho e dourado do logotipo da igreja, sobre branco. Libre Caslon para Escritura e hinos, Figtree para a interface.
+   LAYOUT: app de uma coluna com barra inferior de 5 abas; textos de leitura em coluna estreita. */
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#0b1222);--ink:light-dark(#0d1a30,#e9edf4);--mute:light-dark(#5a6579,#a2adc0);
+--green:light-dark(#041e41,#3a5f96);--deep:#041e41;--sage:light-dark(#eef1f6,#16213a);--line:light-dark(#d9dfe9,#26324a);
+--gold:light-dark(#a87a26,#d9ad5c);--card:light-dark(#ffffff,#111a2e);--fs:19px}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html{scroll-padding-top:72px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Figtree,system-ui,sans-serif;overflow-x:clip;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+button,input,select,textarea{font:inherit;color:inherit}
+header{position:sticky;top:0;z-index:5;background:var(--deep);color:#fff;padding:calc(10px + env(safe-area-inset-top)) max(4vw,16px) 10px;display:flex;align-items:center;gap:12px}
+header img{width:38px;height:38px;flex:none;border-radius:50%;background:#fff}
+header b{font-size:20px;letter-spacing:.04em}header small{display:block;font-size:12.5px;opacity:.8;line-height:1.2}
+main{max-width:760px;margin:0 auto;padding:0 max(4vw,16px)}
+section{display:none;padding-block:20px 32px}section.on{display:block}
+h1{font:700 30px/1.1 'Libre Caslon Text',serif;margin:6px 0 14px;text-wrap:balance}
+h2{font-size:19px;margin:26px 0 10px}
+.mute{color:var(--mute);font-size:14px}
+nav.tabs{position:fixed;inset:auto 0 0 0;z-index:6;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(6,minmax(0,1fr));padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 1px 9px;font-size:11.5px;white-space:nowrap;color:var(--mute);text-decoration:none;min-height:56px}
+nav.tabs a svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav.tabs a.on{color:var(--green);font-weight:700}
+:root[data-theme=dark] nav.tabs a.on{color:#e2bd72}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) nav.tabs a.on{color:#e2bd72}}
+.hero{margin:0 calc(-1*max(4vw,16px));background:var(--deep);color:#fff;position:relative;overflow:hidden}
+.logo{display:block;width:min(62vw,250px);height:auto;margin:22px auto 18px}
+.hist h2{font:700 20px/1.2 'Libre Caslon Text',serif;margin:24px 0 8px}.hist p{font:400 17px/1.75 'Libre Caslon Text',serif;margin:0 0 12px}
+.verse{padding:24px max(4vw,16px) 26px;position:relative;border-top:3px solid var(--gold)}
+.verse p{font:400 21px/1.45 'Libre Caslon Text',serif;margin:0 0 8px;text-wrap:pretty}
+.verse cite{font-style:normal;color:#e2bd72;font-weight:600}
+.verse .lbl{font-size:13px;opacity:.85;margin-bottom:6px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}
+.tile{display:block;background:var(--sage);border-radius:14px;padding:14px;text-decoration:none;color:inherit;min-height:84px}
+.tile b{display:block;font-size:16.5px}.tile span{font-size:13.5px;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:10px 0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-weight:600}
+.btn.pri{background:var(--green);border-color:var(--green);color:#fff}
+.btn.sm{min-height:36px;padding:0 12px;font-size:14px}
+.btn:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+input[type=search],input[type=text],input[type=date],input[type=url],select,textarea{width:100%;min-height:46px;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card)}
+textarea{min-height:110px;resize:vertical}
+label{display:block;font-weight:600;font-size:14px;margin:12px 0 5px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>select{flex:1 1 140px;width:auto}
+.bar{position:sticky;top:58px;z-index:3;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--line)}
+.read{font:400 var(--fs)/1.75 'Libre Caslon Text',serif}
+.read p{margin:0 0 6px}.read sup{font:700 11px Figtree,sans-serif;color:var(--gold);margin-right:4px;vertical-align:4px}
+.read mark{background:color-mix(in srgb,var(--gold) 30%,transparent);color:inherit;border-radius:3px}
+.list{list-style:none;margin:0;padding:0}
+.list li{border-bottom:1px solid var(--line)}
+.list button{all:unset;box-sizing:border-box;display:flex;gap:12px;align-items:baseline;width:100%;padding:12px 4px;cursor:pointer;min-height:48px}
+.list button:focus-visible{outline:3px solid var(--gold)}
+.num{font-weight:700;color:var(--gold);min-width:2.6em;text-align:right;font-variant-numeric:tabular-nums}
+.snip{display:block;font-size:13.5px;color:var(--mute)}
+.lyr{white-space:pre-line;font:400 var(--fs)/1.7 'Libre Caslon Text',serif}
+.cred{font-size:13.5px;color:var(--mute);border-top:1px solid var(--line);padding-top:10px;margin-top:18px}
+.chip{display:inline-block;font-size:12.5px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--sage);color:var(--green)}
+:root[data-theme=dark] .chip{color:#e2bd72}
+.meta{font-size:13px;color:var(--mute);margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.note{background:var(--sage);border-radius:12px;padding:12px 14px;font-size:14.5px;margin:12px 0}
+.empty{text-align:center;color:var(--mute);padding:28px 10px}
+.dv h3{font:700 21px/1.2 'Libre Caslon Text',serif;margin:6px 0}
+.dv .txt{white-space:pre-line;font:400 17px/1.7 'Libre Caslon Text',serif}
+.cm{border-top:1px solid var(--line);padding:8px 0;font-size:15px}
+.cm b{font-size:13.5px}
+details summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
+.doc h2{font:700 19px/1.25 'Libre Caslon Text',serif;margin:28px 0 4px;color:var(--green)}
+:root[data-theme=dark] .doc h2{color:#e2bd72}
+.doc .sub{font-weight:600;color:var(--mute);margin:0 0 10px}
+.doc p{font:400 16.5px/1.7 'Libre Caslon Text',serif;margin:0 0 10px}.doc p b{font-family:Figtree,sans-serif}
+.doc p.li{padding-left:1.2em}
+.doc .inset{border-left:3px solid var(--gold);padding-left:14px;margin:8px 0 16px}
+.toc{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:4px 0 10px;border-bottom:1px solid var(--line)}
+.toc a{flex:none;font-size:14px;font-weight:600;padding:8px 12px;border-radius:99px;background:var(--sage);color:var(--ink);text-decoration:none;white-space:nowrap}
+.topic{border:1px solid var(--line);border-radius:14px;margin:10px 0;background:var(--card)}
+.topic>summary,.art>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:14px 16px;min-height:52px}
+.topic>summary::-webkit-details-marker,.art>summary::-webkit-details-marker{display:none}
+.topic>summary::after,.art>summary::after{content:'';flex:none;margin-left:auto;width:9px;height:9px;border-right:2px solid var(--gold);border-bottom:2px solid var(--gold);transform:rotate(45deg);transition:transform .2s}
+.topic[open]>summary::after,.art[open]>summary::after{transform:rotate(-135deg)}
+.topic>summary b{font:700 17px/1.3 'Libre Caslon Text',serif;color:var(--green)}
+:root[data-theme=dark] .topic>summary b{color:#e2bd72}
+.topic summary small{display:block;font-size:13.5px;color:var(--mute);margin-top:2px}
+.topic .tbody{padding:0 16px 14px}
+.art{border-top:1px solid var(--line)}.art>summary{padding:12px 0;min-height:48px}
+.art>summary small{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.art[open]>summary small{display:none}.art .tbody{padding:0 0 8px}
+.vref{all:unset;cursor:pointer;color:var(--green);font:600 14.5px Figtree,sans-serif;text-decoration:underline;text-decoration-color:var(--gold);text-underline-offset:3px;padding:2px 1px;white-space:nowrap}
+:root[data-theme=dark] .vref{color:#e2bd72}
+.vref.on{background:var(--sage);border-radius:4px;text-decoration:none}
+.vref:focus-visible{outline:3px solid var(--gold)}
+.vbox{background:var(--sage);border-left:3px solid var(--gold);border-radius:8px;padding:10px 12px;margin:-2px 0 12px}
+.vbox p{font-size:15.5px;margin:0 0 6px}.vbox sup{font:700 11px Figtree,sans-serif;color:var(--gold);margin-right:4px}
+.vhd{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px}.vhd b{font:600 14px Figtree,sans-serif}
+.acct{margin-left:auto;min-height:40px;padding:0 14px;border-radius:99px;border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;font-weight:600;cursor:pointer;max-width:45vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.urow{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:10px 0}.urow span{flex:1}
+input[type=email],input[type=password]{width:100%;min-height:46px;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card)}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--sage);border-radius:12px;padding:4px;gap:4px;margin-bottom:8px}
+.seg button{min-height:44px;border:0;border-radius:9px;background:transparent;font-weight:600;cursor:pointer;color:var(--mute)}
+.seg button[aria-selected=true]{background:var(--card);color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+:root[data-theme=dark] .seg button[aria-selected=true]{color:#e2bd72}
+.pcard{display:flex;gap:14px;align-items:flex-start}
+.mcard{padding:0;overflow:hidden}.mcard>div{padding:12px 16px 16px}.banner{display:block;width:100%;aspect-ratio:5/4;object-fit:cover;background:var(--sage)}
+.mcard h3{margin:0;font:700 19px/1.25 'Libre Caslon Text',serif}.mcard .fn{color:var(--gold);font-weight:600;font-size:14.5px;margin-top:2px}.mcard p{margin:6px 0 0;white-space:pre-line;font-size:15.5px}
+.av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.av{flex:none;width:64px;height:64px;overflow:hidden;border-radius:50%;background:var(--deep);color:#e2bd72;display:grid;place-items:center;font:700 18px Figtree,sans-serif}
+.pcard h3{margin:0;font:700 18px/1.25 'Libre Caslon Text',serif}.pcard .fn{color:var(--gold);font-weight:600;font-size:14.5px;margin-top:2px}
+.pcard p{margin:6px 0 0;white-space:pre-line;font-size:15.5px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chips button{flex:none;min-height:38px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);font-weight:600;font-size:14px;cursor:pointer}
+.chips button[aria-pressed=true]{background:var(--deep);border-color:var(--deep);color:#fff}
+.ev>summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.ev>summary::-webkit-details-marker{display:none}
+.ev .dt{flex:none;width:52px;text-align:center;border-radius:10px;background:var(--deep);color:#fff;padding:6px 0;line-height:1.1}
+.topic.ev>summary .dt b{display:block;font:700 20px/1.1 Figtree,sans-serif;color:#fff}
+a.btn{text-decoration:none;color:inherit}a.btn.pri{color:#fff}.ev .dt small{font-size:11.5px;text-transform:uppercase;color:#e2bd72}
+.ev h3{margin:2px 0 2px;font:700 17px/1.25 'Libre Caslon Text',serif}
+.ev .tbody{padding:0 16px 14px}
+.lv{display:flex;gap:10px;align-items:flex-start;border-top:1px solid var(--line);padding:10px 0}
+.lv .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--sage);display:grid;place-items:center;font-weight:700;font-size:13px;color:var(--green)}
+.lv .tom{display:inline-block;font-size:12.5px;font-weight:700;color:var(--gold);border:1px solid var(--gold);border-radius:6px;padding:0 6px;margin-left:6px}
+@media(prefers-reduced-motion:no-preference){section.on{animation:in .25s ease-out}@keyframes in{from{opacity:0;transform:translateY(6px)}}}
+</style>
+</head>
+<body>
+<header>
+<img src="logo.png" alt="">
+<div><b>IBSB</b><small>Igreja Bíblica do Sítio Boatã</small></div>
+<button class="acct" id="acctBtn" hidden>Entrar</button>
+</header>
+
+<main>
+<section id="inicio">
+<div id="instalar" class="note" hidden></div>
+<img class="logo" src="logo.png" alt="Igreja Bíblica do Sítio Boatã">
+<div class="hero">
+<div class="verse"><div class="lbl">Versículo do dia</div><p id="vdTxt">Carregando…</p><cite id="vdRef"></cite></div>
+</div>
+<h2>Devocional de hoje</h2>
+<div id="homeDev"><div class="card mute">Carregando devocionais…</div></div>
+<div class="grid">
+<a class="tile" href="#biblia"><b>Bíblia</b><span>66 livros, com busca</span></a>
+<a class="tile" href="#hinario"><b>Louvor</b><span>Hinário e liturgia dos cultos</span></a>
+<a class="tile" href="#oracao"><b>Pedidos de oração</b><span>Ore pelos irmãos</span></a>
+<a class="tile" href="#devocionais"><b>Devocionais</b><span>Leitura e comentários</span></a>
+<a class="tile" href="#confissao"><b>Confissão de fé</b><span>No que cremos</span></a>
+<a class="tile" href="#estatuto"><b>Estatuto</b><span>Organização da igreja</span></a>
+<a class="tile" href="#historia"><b>História da igreja</b><span>Como Deus nos trouxe até aqui</span></a>
+<a class="tile" href="#lideranca"><b>Liderança e missões</b><span>Pastores, líderes e missionários</span></a>
+</div>
+</section>
+
+<section id="biblia">
+<div class="bar">
+<div class="row"><select id="bkSel" aria-label="Livro"></select><select id="chSel" aria-label="Capítulo"></select></div>
+<div class="row" style="margin-top:8px">
+<button class="btn sm" id="prevCh" aria-label="Capítulo anterior">‹ Ant.</button><button class="btn sm" id="nextCh" aria-label="Próximo capítulo">Próx. ›</button>
+<span style="flex:1"></span><button class="btn sm" data-fs="-1" aria-label="Diminuir letra">A−</button><button class="btn sm" data-fs="1" aria-label="Aumentar letra">A+</button>
+</div>
+<form id="bSearch" class="row" style="margin-top:8px"><input type="search" id="bQ" placeholder="Buscar na Bíblia (ex.: graça, pastor)" aria-label="Buscar na Bíblia" style="flex:1 1 200px;width:auto"><button class="btn sm pri">Buscar</button></form>
+</div>
+<div id="bOut" class="read" aria-live="polite"><p class="mute">Carregando a Bíblia…</p></div>
+<p class="mute" style="margin-top:22px">Texto: Bíblia Livre (BLIVRE), tradução de licença livre baseada em Almeida.</p>
+</section>
+
+<section id="hinario">
+<h1>Louvor</h1>
+<div class="seg" role="tablist" aria-label="Hinário e liturgia">
+<button role="tab" id="tabHin" aria-selected="true" data-lseg="hin">Hinário</button>
+<button role="tab" id="tabLit" aria-selected="false" data-lseg="lit">Liturgia</button>
+</div>
+<div id="litView" hidden>
+<p class="mute">Louvores dos cultos e encontros da semana.</p>
+<div class="chips" id="litChips"></div>
+<div id="evForm"></div>
+<div id="evList"><div class="empty">Carregando…</div></div>
+</div>
+<div id="hinWrap">
+<div id="hList">
+<input type="search" id="hQ" placeholder="Número, título ou trecho da letra" aria-label="Buscar hino">
+<p class="mute" id="hCount"></p>
+<ul class="list" id="hUl"></ul>
+</div>
+<div id="hView" hidden>
+<div class="row bar"><button class="btn sm" id="hBack">‹ Lista</button><span style="flex:1"></span><button class="btn sm" id="hPrev" aria-label="Hino anterior">‹</button><button class="btn sm" id="hNext" aria-label="Próximo hino">›</button><button class="btn sm" data-fs="-1" aria-label="Diminuir letra">A−</button><button class="btn sm" data-fs="1" aria-label="Aumentar letra">A+</button></div>
+<h1 id="hTitle"></h1><div class="lyr" id="hLyr"></div><div class="cred" id="hCred"></div>
+</div>
+</div>
+</section>
+
+<section id="oracao">
+<h1>Pedidos de oração</h1>
+<p class="mute">“Orai uns pelos outros.” Tiago 5:16</p>
+<div id="pForm"></div>
+<div id="pList"><div class="empty">Carregando pedidos…</div></div>
+</section>
+
+<section id="devocionais">
+<h1>Devocionais</h1>
+<div id="dForm"></div>
+<div id="dList"><div class="empty">Carregando devocionais…</div></div>
+</section>
+
+<section id="confissao" class="doc">
+<h1>Confissão de fé</h1>
+<p class="mute">Adotada pela igreja no Artigo 39 do seu Estatuto (reforma estatutária de 2020).</p>
+<p class="mute">Toque em um tópico para ler.</p>
+<div id="confTxt"><p class="mute">Carregando…</p></div>
+</section>
+
+<section id="estatuto" class="doc">
+<h1>Estatuto</h1>
+<p class="mute">Reforma estatutária da Igreja Bíblica do Sítio Boatã (2020).</p>
+<p class="mute">Toque em um capítulo e depois no artigo para ler.</p>
+<div id="estTxt"><p class="mute">Carregando…</p></div>
+</section>
+
+<section id="conta">
+<h1>Minha conta</h1>
+<div id="contaBox"><p class="mute">Carregando…</p></div>
+</section>
+
+<section id="lideranca">
+<h1>Liderança</h1>
+<div class="seg" role="tablist" aria-label="Liderança e missionários">
+<button role="tab" id="tabLid" aria-selected="true" data-seg="lider">Liderança</button>
+<button role="tab" id="tabMis" aria-selected="false" data-seg="missionario">Missionários</button>
+</div>
+<p class="mute" id="segIntro"></p>
+<div id="pForm2"></div>
+<div id="relBox"></div>
+<div id="pessoasList"><div class="empty">Carregando…</div></div>
+</section>
+
+<section id="historia" class="hist">
+<h1>História da igreja</h1>
+<div class="note">A história da Igreja Bíblica do Sítio Boatã será publicada aqui em breve: fundação, pastores, marcos e testemunhos.</div>
+<div id="histTxt"></div>
+</section>
+</main>
+
+<nav class="tabs" aria-label="Seções">
+<a href="#inicio" data-t="inicio"><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/></svg>Início</a>
+<a href="#biblia" data-t="biblia"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M12 7v5M9.5 9h5"/></svg>Bíblia</a>
+<a href="#hinario" data-t="hinario"><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>Louvor</a>
+<a href="#oracao" data-t="oracao"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>Oração</a>
+<a href="#devocionais" data-t="devocionais"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>Devocional</a>
+<a href="#lideranca" data-t="lideranca"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2c2.3.1 4.3 1.6 4.9 4.8"/></svg>Liderança</a>
+</nav>
+
+<script>
+{
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const store={get(k,d){try{const v=localStorage.getItem('ibsb.'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('ibsb.'+k,JSON.stringify(v))}catch(e){}}};
+const hoje=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const fmtData=s=>{const [y,m,d]=String(s).split('-');return d&&m&&y?`${d}/${m}/${y}`:''};
+
+/* ---------- navegação ---------- */
+const views=['inicio','biblia','hinario','oracao','devocionais','historia','confissao','estatuto','conta','lideranca'];
+function route(){const v=views.includes(location.hash.slice(1))?location.hash.slice(1):'inicio';
+ for(const s of document.querySelectorAll('main>section'))s.classList.toggle('on',s.id===v);
+ for(const a of document.querySelectorAll('nav.tabs a'))a.classList.toggle('on',a.dataset.t===v);
+ if(v==='biblia')loadBible().then(renderChapter);
+ window.scrollTo(0,0)}
+addEventListener('hashchange',route);
+
+/* ---------- tamanho da letra ---------- */
+let fs=store.get('fs',19);const applyFs=()=>document.documentElement.style.setProperty('--fs',fs+'px');applyFs();
+document.addEventListener('click',e=>{const b=e.target.closest('[data-fs]');if(!b)return;fs=Math.max(15,Math.min(30,fs+2*+b.dataset.fs));store.set('fs',fs);applyFs()});
+
+/* ---------- Bíblia ---------- */
+let B=null,bLoad=null;let pos=store.get('pos',{b:42,c:0});
+const VD=[[42,3,16],[18,23,1],[19,3,5],[22,40,31],[44,8,28],[49,4,13],[49,4,6],[18,46,1],[42,14,6],[57,11,1],[44,5,8],[22,26,3],[59,5,7],[39,11,28],[18,119,105],[5,1,9],[24,3,22],[23,29,11],[39,6,33],[48,2,8],[46,5,17],[47,2,20],[61,1,9],[18,37,5],[18,91,1],[44,12,2],[32,6,8],[58,1,5],[65,21,4],[42,16,33],[18,121,1]];
+function loadBible(){if(bLoad)return bLoad;bLoad=fetch('biblia.json').then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{B=d;fillBooks();verseOfDay();return d}).catch(()=>{bLoad=null;$('#bOut').innerHTML='<p class="mute">Não foi possível carregar a Bíblia. Verifique a conexão e abra a aba de novo.</p>';$('#vdTxt').textContent='Não foi possível carregar o versículo.'});return bLoad}
+function fillBooks(){$('#bkSel').innerHTML='<optgroup label="Antigo Testamento">'+B.slice(0,39).map((b,i)=>`<option value="${i}">${esc(b.n)}</option>`).join('')+'</optgroup><optgroup label="Novo Testamento">'+B.slice(39).map((b,i)=>`<option value="${i+39}">${esc(b.n)}</option>`).join('')+'</optgroup>'}
+function renderChapter(){if(!B)return;const bk=B[pos.b];if(!bk)return;
+ $('#bkSel').value=pos.b;$('#chSel').innerHTML=bk.c.map((_,i)=>`<option value="${i}">Capítulo ${i+1}</option>`).join('');$('#chSel').value=pos.c;
+ $('#bOut').innerHTML=`<h1>${esc(bk.n)} ${pos.c+1}</h1>`+bk.c[pos.c].map((v,i)=>`<p id="v${i+1}"><sup>${i+1}</sup>${esc(v)}</p>`).join('');
+ $('#prevCh').disabled=pos.b===0&&pos.c===0;$('#nextCh').disabled=pos.b===B.length-1&&pos.c===bk.c.length-1;store.set('pos',pos)}
+function go(b,c,v){pos={b,c};if(location.hash!=='#biblia')location.hash='biblia';renderChapter();if(v!=null){const el=$('#v'+(v+1));if(el){el.scrollIntoView({block:'center'});el.querySelector('sup').style.background='var(--sage)'}}else scrollTo(0,0)}
+$('#bkSel').onchange=e=>go(+e.target.value,0);$('#chSel').onchange=e=>go(pos.b,+e.target.value);
+$('#prevCh').onclick=()=>{if(pos.c>0)go(pos.b,pos.c-1);else if(pos.b>0)go(pos.b-1,B[pos.b-1].c.length-1)};
+$('#nextCh').onclick=()=>{if(pos.c<B[pos.b].c.length-1)go(pos.b,pos.c+1);else if(pos.b<B.length-1)go(pos.b+1,0)};
+$('#bSearch').onsubmit=async e=>{e.preventDefault();await loadBible();const q=norm($('#bQ').value.trim());if(q.length<3){$('#bOut').innerHTML='<p class="mute">Digite pelo menos 3 letras.</p>';return}
+ const res=[];for(let b=0;b<B.length&&res.length<200;b++)B[b].c.forEach((ch,c)=>ch.forEach((v,i)=>{if(res.length<200&&norm(v).includes(q))res.push([b,c,i,v])}));
+ const re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+ $('#bOut').innerHTML=`<h1>Busca</h1><p class="mute">${res.length>=200?'Mostrando os 200 primeiros resultados':res.length+' resultado(s)'} para “${esc($('#bQ').value)}”. Toque para abrir.</p><ul class="list">`+res.map(([b,c,i,v])=>{const nv=norm(v);const out=esc(v);const hit=nv.indexOf(q);
+  const hl=hit>=0&&nv.length===v.length?esc(v.slice(0,hit))+'<mark>'+esc(v.slice(hit,hit+q.length))+'</mark>'+esc(v.slice(hit+q.length)):out;
+  return `<li><button data-go="${b},${c},${i}"><span><b>${esc(B[b].n)} ${c+1}:${i+1}</b><span class="snip" style="font-size:15px;color:inherit">${hl}</span></span></button></li>`}).join('')+'</ul>'};
+$('#bOut').addEventListener('click',e=>{const t=e.target.closest('[data-go]');if(t){const [b,c,i]=t.dataset.go.split(',').map(Number);go(b,c,i)}});
+function verseOfDay(){const d=new Date();const n=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);const [b,c1,v1]=VD[n%VD.length],c=c1-1,v=v1-1;const t=B[b]?.c[c]?.[v];if(!t)return;
+ $('#vdTxt').textContent=t;$('#vdRef').textContent=`${B[b].n} ${c+1}:${v+1}`;$('#vdRef').style.cursor='pointer';$('#vdRef').onclick=()=>go(b,c,v)}
+
+/* ---------- Hinário ---------- */
+let H=[],hi=0;
+fetch('hinos.json').then(r=>r.json()).then(d=>{H=d;renderHymns();if(typeof loadedE!=='undefined'&&loadedE)renderLit()}).catch(()=>{$('#hUl').innerHTML='<li class="empty">Não foi possível carregar o hinário.</li>'});
+function renderHymns(){const q=norm($('#hQ').value.trim());const L=!q?H:H.filter(h=>String(h.n)===q||norm(h.t).includes(q)||norm(h.l).includes(q));
+ $('#hCount').textContent=q?`${L.length} hino(s) encontrado(s)`:`${H.length} hinos clássicos do Cantor Cristão, em domínio público`;
+ $('#hUl').innerHTML=L.map(h=>`<li><button data-h="${H.indexOf(h)}"><span class="num">${h.n}</span><span><b>${esc(h.t)}</b><span class="snip">${esc(h.l.split('\n')[0])}</span></span></button></li>`).join('')||'<li class="empty">Nenhum hino encontrado.</li>'}
+$('#hQ').oninput=renderHymns;
+$('#hUl').onclick=e=>{const b=e.target.closest('[data-h]');if(b)openHymn(+b.dataset.h)};
+function openHymn(i){hi=i;const h=H[i];$('#hList').hidden=true;$('#hView').hidden=false;$('#hTitle').textContent=h.n+' · '+h.t;$('#hLyr').textContent=h.l;
+ $('#hCred').textContent='Créditos: '+h.c.join(' · ');$('#hPrev').disabled=i===0;$('#hNext').disabled=i===H.length-1;scrollTo(0,0)}
+$('#hBack').onclick=()=>{$('#hView').hidden=true;$('#hList').hidden=false};
+$('#hPrev').onclick=()=>hi>0&&openHymn(hi-1);$('#hNext').onclick=()=>hi<H.length-1&&openHymn(hi+1);
+
+
+/* ---------- Estatuto e Confissão ---------- */
+const LIV='gn,ex,lv,nm,dt,js,jz,rt,1sm,2sm,1rs,2rs,1cr,2cr,ed,ne,et,jo:jó,sl,pv,ec,ct,is,jr,lm,ez,dn,os,jl,am,ob,jn,mq,na,hc,sf,ag,zc,ml,mt,mc,lc,joao:jo,at,rm,1co,2co,gl,ef,fp,cl,1ts,2ts,1tm,2tm,tt,fm,hb,tg,1pe,2pe,1joao:1jo,2joao:2jo,3joao:3jo,jd,ap'.split(',');
+const LIVX={};LIV.forEach((k,i)=>k.split(':').forEach(q=>LIVX[q]=i));LIVX['jo']=42;
+const UMCAP=new Set([30,56,62,63,64]);
+function parseRefs(str){let bk=null;return str.split(';').map(seg=>{const raw=seg.trim();const t=norm(raw).replace(/\s+/g,'');
+ let m=t.match(/^(\d?[a-z]+)\.?([\d,-]+)$/),c,vs;if(m&&UMCAP.has(LIVX[m[1]])){bk=LIVX[m[1]];return{raw,b:bk,c:1,R:m[2].split(',').filter(Boolean).map(r=>{const [x,y]=r.split('-').map(Number);return[x,y||x]})}}
+ m=t.match(/^(\d?[a-z]+)\.?(\d+)(?:\.(.+))?$/);
+ if(m&&LIVX[m[1]]!=null){bk=LIVX[m[1]];c=m[2];vs=m[3]}else{m=t.match(/^(\d+)(?:\.(.+))?$/);if(!m||bk==null)return{raw};c=m[1];vs=m[2]}
+ if(UMCAP.has(bk)&&!vs){vs=c;c='1'}
+ const R=vs?vs.split(',').filter(Boolean).map(r=>{const [x,y]=r.split('-').map(Number);return[x,y||x]}):null;
+ return{raw,b:bk,c:+c,R}})}
+function refsHtml(str,pid){return parseRefs(str).map((r,i)=>r.b==null?esc(r.raw):`<button class="vref" data-ref="${esc(JSON.stringify({b:r.b,c:r.c,R:r.R}))}" data-p="${pid}">${esc(r.raw)}</button>`).join('; ')}
+let pidN=0;
+const confPara=x=>{const m=x.t.match(/^(.*)\(([^()]*\d[^()]*)\)(\.?)\s*$/s);if(!m)return para(x);const id='vp'+(pidN++);
+ return `<p>${x.b?'<b>'+esc(x.b)+'</b> ':''}${esc(m[1])}(${refsHtml(m[2],id)})${m[3]}</p><div class="vbox" id="${id}" hidden></div>`};
+document.addEventListener('click',async e=>{const btn=e.target.closest('.vref');if(!btn)return;const box=document.getElementById(btn.dataset.p);
+ if(btn.classList.contains('on')){btn.classList.remove('on');box.hidden=true;return}
+ for(const o of document.querySelectorAll('.vref.on[data-p="'+btn.dataset.p+'"]'))o.classList.remove('on');btn.classList.add('on');
+ box.hidden=false;box.innerHTML='<p class="mute">Carregando…</p>';await loadBible();if(!B){box.innerHTML='<p class="mute">Não foi possível carregar a Bíblia.</p>';return}
+ const r=JSON.parse(btn.dataset.ref),bk=B[r.b],ch=bk&&bk.c[r.c-1];if(!ch){box.innerHTML='<p class="mute">Referência não encontrada.</p>';return}
+ let html='',first=null;
+ if(!r.R){html=`<p class="mute">Capítulo inteiro (${ch.length} versículos).</p>`+ch.slice(0,3).map((v,i)=>`<p><sup>${i+1}</sup>${esc(v)}</p>`).join('')+'<p class="mute">…</p>';first=0}
+ else for(const [x,y] of r.R)for(let v=x;v<=y;v++){if(ch[v-1]==null)continue;if(first==null)first=v-1;html+=`<p><sup>${v}</sup>${esc(ch[v-1])}</p>`}
+ const lbl=`${bk.n} ${r.c}`+(r.R?':'+r.R.map(([x,y])=>x===y?x:x+'-'+y).join(','):'');
+ box.innerHTML=`<div class="vhd"><b>${esc(lbl)}</b><button class="btn sm" data-abrir="${r.b},${r.c-1},${first??0}">Abrir na Bíblia</button></div>`+(html||'<p class="mute">Versículo não encontrado nesta tradução.</p>')});
+document.addEventListener('click',e=>{const a=e.target.closest('[data-abrir]');if(!a)return;const [b,c,v]=a.dataset.abrir.split(',').map(Number);go(b,c,v)});
+const para=x=>x.k==='conf'?'<p><a class="btn sm" href="#confissao">Ler a Confissão de Fé completa</a></p>':`<p${x.k==='li'?' class="li"':''}>${x.b?'<b>'+esc(x.b)+'</b> ':''}${esc(x.t)}</p>`;
+function secoes(L){const S=[];for(const x of L){if(x.k==='h')S.push({h:x,c:[]});else if(S.length)S[S.length-1].c.push(x)}return S}
+function artigos(c){const A=[];for(const x of c){if(x.b&&/^Artigo/.test(x.b)||!A.length)A.push({a:x,c:[x]});else A[A.length-1].c.push(x)}return A}
+function topicos(L,sub){return secoes(L).map(s=>`<details class="topic"><summary><span><b>${esc(s.h.t)}</b>${s.h.s?`<small>${esc(s.h.s)}</small>`:''}</span></summary><div class="tbody">${
+ sub?artigos(s.c).map(a=>a.a.b&&/^Artigo/.test(a.a.b)?`<details class="art"><summary><span><b>${esc(a.a.b.replace('Artigo','Art.').replace(/\.$/,''))}</b> <small>${esc(a.a.t)}</small></span></summary><div class="tbody">${a.c.map(para).join('')}</div></details>`:a.c.map(para).join('')).join(''):s.c.map(confPara).join('')}</div></details>`).join('')}
+fetch('documentos.json').then(r=>r.json()).then(D=>{
+ $('#estTxt').innerHTML=topicos(D.estatuto,true);$('#confTxt').innerHTML=topicos(D.confissao,false)
+}).catch(()=>{$('#estTxt').textContent='Não foi possível carregar o estatuto.';$('#confTxt').textContent='Não foi possível carregar a confissão.'});
+
+/* ---------- Dados compartilhados (orações e devocionais) ---------- */
+let db=null,me=null,uid=null,canWrite=false,isAdmin=false,auth=null,isDono=false,usuario=null;
+let pedidos=[],orando={},devs=[],coments=[],pend=[],envios=[],names={},loaded={p:false,d:false,pes:false,ev:false,rel:false};
+const CATS=['Saúde','Família','Trabalho','Vida espiritual','Gratidão','Outro'];
+async function resolveNames(ids){if(!db)return;ids=[...new Set(ids)].filter(i=>i&&!(i in names));if(!ids.length)return;
+ await Promise.all(ids.map(async i=>{try{const d=await db.doc('users/'+i).get();names[i]=(d.exists&&d.data().nome)||'Irmão(ã)'}catch(e){names[i]='Irmão(ã)'}}))}
+const nm=i=>names[i]||'Irmão(ã)';
+
+function renderPedidos(){
+ const f=$('#pForm');
+ if(!db){f.innerHTML='';$('#pList').innerHTML='<div class="note">Os pedidos de oração estarão disponíveis em breve.</div>';return}
+ if(!uid){f.innerHTML='';$('#pList').innerHTML='<div class="note">Para ver os pedidos de oração e fazer o seu, entre com a sua conta.<div class="row" style="margin-top:10px"><a class="btn sm pri" href="#conta">Entrar</a></div></div>';return}
+ f.innerHTML=canWrite?`<details class="card"><summary>+ Fazer um pedido de oração</summary><form id="pNew"><label for="pTxt">Seu pedido</label><textarea id="pTxt" required maxlength="800" placeholder="Escreva pelo que devemos orar"></textarea>
+ <label for="pCat">Assunto</label><select id="pCat">${CATS.map(c=>`<option>${c}</option>`).join('')}</select>
+ <label style="display:flex;gap:8px;align-items:center;font-weight:500"><input type="checkbox" id="pAnon" style="width:22px;height:22px"> Publicar sem mostrar meu nome</label>
+ <div class="row" style="margin-top:12px"><button class="btn pri">Enviar pedido</button><span class="mute" id="pMsg" role="status"></span></div></form></details>`
+ :'';
+ const pf=$('#pNew');if(pf)pf.onsubmit=addPedido;
+ if(!loaded.p){$('#pList').innerHTML='<div class="empty">Carregando pedidos…</div>';return}
+ const L=pedidos.slice().sort((a,b)=>b.ts-a.ts);
+ $('#pList').innerHTML=L.length?L.map(p=>{const n=(orando[p.key]||[]).length;const mine=(orando[p.key]||[]).includes(uid);
+  return `<div class="card"><span class="chip">${esc(p.cat)}</span><p style="margin:8px 0 0;white-space:pre-line">${esc(p.texto)}</p>
+  <div class="meta"><span>${p.anon?'Anônimo':esc(nm(p.uid))} · ${esc(fmtData(p.data))}</span><span style="flex:1"></span>
+  ${canWrite?`<button class="btn sm ${mine?'pri':''}" data-orar="${esc(p.key)}" aria-pressed="${mine}">${mine?'Orando':'Vou orar'}${n?' · '+n:''}</button>`:(n?`<span>${n} orando</span>`:'')}
+  ${(p.uid===uid||isAdmin)&&canWrite?`<button class="btn sm" data-delp="${esc(p.key)}">${p.uid===uid?'Excluir':'Remover'}</button>`:''}</div></div>`}).join('')
+  :'<div class="empty">Nenhum pedido ainda. Seja o primeiro a compartilhar um motivo de oração.</div>'}
+
+async function addPedido(e){e.preventDefault();const t=$('#pTxt').value.trim();if(!t)return;const btn=e.target.querySelector('button');btn.disabled=true;$('#pMsg').textContent='Enviando…';
+ try{const ref=db.doc('pedidos/'+uid);const s=await ref.get();const itens=s.exists?(s.data().itens||[]).slice():[];
+  itens.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),texto:t.slice(0,800),cat:$('#pCat').value,anon:$('#pAnon').checked,data:hoje(),ts:Date.now()});
+  await ref.set({itens:itens.slice(-30)});$('#pTxt').value='';$('#pMsg').textContent='Pedido enviado.'}
+ catch(err){$('#pMsg').textContent=err?.code==='quota_exceeded'?'O espaço do app está cheio. Avise o responsável.':'Não foi possível enviar. Tente de novo.';if(err?.code==='invalid_argument')canWrite=false}
+ btn.disabled=false}
+
+document.addEventListener('click',async e=>{
+ const o=e.target.closest('[data-orar]');
+ if(o){o.disabled=true;const k=o.dataset.orar;const ref=db.doc('oracoes/'+uid);try{const s=await ref.get();let ids=s.exists?(s.data().ids||[]).slice():[];ids=ids.includes(k)?ids.filter(x=>x!==k):[...ids,k].slice(-200);await ref.set({ids})}catch(err){o.disabled=false}return}
+ const d=e.target.closest('[data-delp]');
+ if(d){const k=d.dataset.delp;const [u,id]=k.split('|');if(d.dataset.sure!=='1'){d.dataset.sure='1';d.textContent='Confirmar?';return}
+  d.disabled=true;try{const ref=db.doc('pedidos/'+u);const s=await ref.get();if(s.exists)await ref.set({itens:(s.data().itens||[]).filter(x=>x.id!==id)})}catch(err){d.disabled=false;d.textContent='Não foi possível'}return}
+ const dd=e.target.closest('[data-deld]');
+ if(dd){if(dd.dataset.sure!=='1'){dd.dataset.sure='1';dd.textContent='Confirmar exclusão?';return}dd.disabled=true;try{await db.doc('devocionais/'+dd.dataset.deld).delete()}catch(err){dd.disabled=false}return}
+ const rc=e.target.closest('[data-recusar]');
+ if(rc){if(rc.dataset.sure!=='1'){rc.dataset.sure='1';rc.textContent='Confirmar recusa?';return}rc.disabled=true;try{await tirarDaFila(rc.dataset.recusar)}catch(err){rc.disabled=false;rc.textContent='Não foi possível'}return}
+ const dc=e.target.closest('[data-delc]');
+ if(dc){dc.disabled=true;try{const ref=db.doc('comentarios/'+uid);const s=await ref.get();if(s.exists)await ref.set({itens:(s.data().itens||[]).filter(x=>x.id!==dc.dataset.delc)})}catch(err){dc.disabled=false}return}
+});
+
+const DIAS=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+const quando=d=>d.dia!=null&&d.dia!==''?`Semana ${d.semana||1} · ${DIAS[d.dia]}`:fmtData(d.data);
+function semanaAtual(){const ep=new Date(2026,10,22),n=new Date(),n0=new Date(n.getFullYear(),n.getMonth(),n.getDate());const w=Math.floor(Math.round((n0-ep)/864e5)/7);return ((w%4)+4)%4+1}
+function todayDev(){const h=hoje(),w=new Date().getDay(),sm=semanaAtual();return devs.find(d=>d.data===h)||devs.find(d=>d.dia!=null&&+d.dia===w&&(+d.semana||1)===sm)||devs.find(d=>d.dia!=null&&+d.dia===w)||devs.filter(d=>d.data&&d.data<=h).sort((a,b)=>a.data<b.data?1:-1)[0]}
+const fonteBtn=d=>/^https:\/\//.test(d.link||'')?`<div class="row" style="margin-top:10px"><a class="btn sm" href="${esc(d.link)}" target="_blank" rel="noopener">Ler o texto completo${d.fonte?' em '+esc(d.fonte):''} ↗</a></div>`:'';
+function devBody(d){return `<span class="chip">${esc(quando(d))}</span><h3>${esc(d.titulo)}</h3>${d.ref?`<div class="mute" style="font-weight:600">${esc(d.ref)}</div>`:''}`}
+function devCard(d,full){const cs=coments.filter(c=>c.dev===d.id).sort((a,b)=>a.ts-b.ts);
+ return `<article class="card dv">${devBody(d)}
+ <div class="txt" style="margin-top:8px">${esc(full?d.texto:String(d.texto).slice(0,260)+(String(d.texto).length>260?'…':''))}</div>
+ ${full?fonteBtn(d)+`<div class="meta">${/^Resumo/.test(d.autor||'')?esc(d.autor):'Por '+esc(d.autor||nm(d.uid))}${isAdmin?` <span style="flex:1"></span><button class="btn sm" data-deld="${esc(d.id)}">Excluir</button>`:''}</div>
+ <h2 style="font-size:16px;margin:18px 0 4px">Comentários (${cs.length})</h2>${cs.map(c=>`<div class="cm"><b>${esc(nm(c.uid))}</b> <span class="mute">${esc(fmtData(c.data))}</span><div style="white-space:pre-line">${esc(c.texto)}</div>${c.uid===uid?`<button class="btn sm" style="margin-top:4px" data-delc="${esc(c.id)}">Apagar</button>`:''}</div>`).join('')||'<p class="mute">Ainda sem comentários.</p>'}
+ ${canWrite?`<form class="cForm" data-dev="${esc(d.id)}"><label for="c_${esc(d.id)}">Deixe seu comentário ou amém</label><textarea id="c_${esc(d.id)}" required maxlength="600" style="min-height:70px"></textarea><div class="row" style="margin-top:8px"><button class="btn sm pri">Comentar</button><span class="mute" role="status"></span></div></form>`:'<p class="mute"><a href="#conta">Entre</a> para comentar.</p>'}`
+ :`<div class="row" style="margin-top:10px"><a class="btn sm" href="#devocionais">Ler e comentar</a></div>`}</article>`}
+const whenSel=(id,d)=>`<select id="${id}"><option value="data"${d&&d.data?' selected':''}>Data específica</option>${[1,2,3,4].map(sm=>`<optgroup label="Série semanal · Semana ${sm}">`+DIAS.map((x,i)=>`<option value="${sm}-${i}"${d&&d.dia!=null&&+d.dia===i&&(+d.semana||1)===sm?' selected':''}>Semana ${sm} · ${x}</option>`).join('')+'</optgroup>').join('')}</select>`;
+function queueCard(q){const k=esc(q.key);return `<form class="card qForm" data-q="${k}"><span class="chip">${q.src==='envio'?'Enviado por '+esc(nm(q.uid)):'Aguardando aprovação'}</span>
+ <label>Título</label><input type="text" name="titulo" value="${esc(q.titulo)}" maxlength="120" required>
+ <label>Referência</label><input type="text" name="ref" value="${esc(q.ref||'')}" maxlength="80">
+ <label>Quando</label><div class="row">${whenSel('w_'+k,q).replace('<select','<select name="quando"')}<input type="date" name="data" value="${esc(q.data||hoje())}" style="flex:1 1 140px;width:auto"></div>
+ <label>Mensagem</label><textarea name="texto" maxlength="6000" style="min-height:200px" required>${esc(q.texto)}</textarea>
+ <label>Fonte (opcional)</label><input type="text" name="fonte" value="${esc(q.fonte||'')}" maxlength="80" placeholder="Ex.: Voltemos ao Evangelho">
+ <label>Link do texto original (opcional)</label><input type="url" name="link" value="${esc(q.link||'')}" maxlength="300" placeholder="https://">
+ <div class="row" style="margin-top:12px"><button class="btn pri" name="ok">Aprovar</button><button type="button" class="btn" data-recusar="${k}">Recusar</button><span class="mute" role="status"></span></div></form>`}
+function renderDevs(){
+ if(!db){$('#dForm').innerHTML='';$('#dList').innerHTML='<div class="note">Os devocionais estarão disponíveis em breve.</div>';$('#homeDev').innerHTML='<div class="card mute">O devocional do dia estará disponível em breve.</div>';return}
+ const queue=[...pend.map(p=>({...p,src:'pend',key:'p|'+p.id})),...envios.map(e=>({...e,src:'envio',key:'e|'+e.uid+'|'+e.id}))].sort((a,b)=>a.ts-b.ts);
+ const mine=envios.filter(e=>e.uid===uid);
+ $('#dForm').innerHTML=(canWrite?`<details class="card"><summary>+ Escrever devocional</summary><form id="dNew"><p class="mute" style="margin:4px 0 0">Todo devocional passa por aprovação da liderança antes de aparecer para a igreja.</p>
+ <label for="dT">Título</label><input type="text" id="dT" required maxlength="120"><label for="dR">Texto bíblico (referência)</label><input type="text" id="dR" maxlength="80" placeholder="Ex.: Salmos 23:1">
+ <label for="dW">Quando</label><div class="row">${whenSel('dW')}<input type="date" id="dD" value="${hoje()}" style="flex:1 1 140px;width:auto" aria-label="Data"></div>
+ <label for="dX">Mensagem</label><textarea id="dX" required maxlength="6000" style="min-height:180px"></textarea>
+ <label for="dF">Fonte (opcional)</label><input type="text" id="dF" maxlength="80" placeholder="Ex.: Chamada da Meia-Noite">
+ <label for="dL">Link do texto original (opcional)</label><input type="url" id="dL" maxlength="300" placeholder="https://">
+ <div class="row" style="margin-top:12px"><button class="btn pri">Enviar para aprovação</button><span class="mute" id="dMsg" role="status"></span></div></form></details>`:'')
+ +(isAdmin&&queue.length?`<h2>Aguardando aprovação (${queue.length})</h2><p class="mute">Revise, ajuste se precisar e toque em Aprovar. Só a liderança vê esta fila.</p>${queue.map(queueCard).join('')}`:'')
+ +(!isAdmin&&mine.length?`<div class="note">Você tem ${mine.length} devocional(is) aguardando aprovação.</div>`:'');
+ const df=$('#dNew');if(df)df.onsubmit=addDev;
+ for(const f of document.querySelectorAll('.qForm'))f.onsubmit=aprovar;
+ if(!loaded.d)return;
+ const t=todayDev();const h=hoje();
+ const outros=devs.filter(d=>d!==t&&(d.dia!=null||d.data<=h||isAdmin)).sort((a,b)=>{const ka=a.dia!=null?'0'+(a.semana||1)+a.dia:'1'+a.data,kb=b.dia!=null?'0'+(b.semana||1)+b.dia:'1'+b.data;return ka<kb?-1:1});
+ $('#dList').innerHTML=(t?'<h2>Hoje</h2>'+devCard(t,true):'<div class="empty">Nenhum devocional aprovado ainda.</div>')
+  +(outros.length?`<h2>Outros devocionais</h2><p class="mute">A série semanal tem 4 semanas e recomeça a cada mês. Esta é a semana ${semanaAtual()}.</p>`+outros.map(d=>`<details class="card"><summary>${esc(quando(d))} · ${esc(d.titulo)}</summary>${devCard(d,true).replace('<article class="card dv">','<article class="dv">')}</details>`).join(''):'');
+ $('#homeDev').innerHTML=t?devCard(t,false):'<div class="card mute">O devocional de hoje ainda não foi aprovado.</div>';
+ for(const f of document.querySelectorAll('.cForm'))f.onsubmit=addComent}
+function lerQuando(sel,date){const v=sel.value;if(v==='data')return{data:date||hoje(),dia:null,semana:null};const [sm,i]=v.split('-').map(Number);return{semana:sm,dia:i,data:null}}
+async function addDev(e){e.preventDefault();const btn=e.target.querySelector('button');btn.disabled=true;$('#dMsg').textContent='Enviando…';
+ const item={titulo:$('#dT').value.trim(),ref:$('#dR').value.trim(),...lerQuando($('#dW'),$('#dD').value),texto:$('#dX').value.trim(),fonte:$('#dF').value.trim(),link:$('#dL').value.trim(),ts:Date.now()};
+ try{if(isAdmin)await db.collection('pendentes').add({...item,uid});
+  else{const ref=db.doc('envios/'+uid);const s=await ref.get();const itens=s.exists?(s.data().itens||[]).slice():[];itens.push({...item,id:Date.now().toString(36)});await ref.set({itens:itens.slice(-20)})}
+  $('#dMsg').textContent='Enviado para aprovação.';e.target.reset();$('#dD').value=hoje()}
+ catch(err){$('#dMsg').textContent='Não foi possível enviar.'}btn.disabled=false}
+async function tirarDaFila(key){const p=key.split('|');if(p[0]==='p')return db.doc('pendentes/'+p[1]).delete();
+ const ref=db.doc('envios/'+p[1]);const s=await ref.get();if(s.exists)await ref.set({itens:(s.data().itens||[]).filter(x=>x.id!==p[2])})}
+async function aprovar(e){e.preventDefault();const f=e.target,st=f.querySelector('[role=status]'),b=f.querySelector('[name=ok]');b.disabled=true;st.textContent='Aprovando…';
+ const key=f.dataset.q;const q=[...pend.map(p=>({...p,key:'p|'+p.id})),...envios.map(x=>({...x,key:'e|'+x.uid+'|'+x.id}))].find(x=>x.key===key)||{};
+ try{await db.collection('devocionais').add({titulo:f.titulo.value.trim(),ref:f.ref.value.trim(),texto:f.texto.value.trim(),fonte:f.fonte.value.trim(),link:f.link.value.trim(),...lerQuando(f.quando,f.data.value),uid:q.uid||'',autor:q.autor||'',ts:Date.now(),aprovadoPor:uid});
+  await tirarDaFila(key)}catch(err){st.textContent='Não foi possível aprovar.';b.disabled=false}}
+async function addComent(e){e.preventDefault();const f=e.target;const ta=f.querySelector('textarea');const st=f.querySelector('[role=status]');const t=ta.value.trim();if(!t)return;const btn=f.querySelector('button');btn.disabled=true;st.textContent='Enviando…';
+ try{const ref=db.doc('comentarios/'+uid);const s=await ref.get();const itens=s.exists?(s.data().itens||[]).slice():[];itens.push({id:Date.now().toString(36),dev:f.dataset.dev,texto:t.slice(0,600),data:hoje(),ts:Date.now()});await ref.set({itens:itens.slice(-100)})}
+ catch(err){st.textContent='Não foi possível enviar.';btn.disabled=false}}
+
+function sub(col,fn,key){let timer=setTimeout(()=>{if(key&&!loaded[key]){loaded[key]=true;fn([]);}},10000);
+ db.collection(col).onSnapshot(s=>{if(!s.metadata.fromCache)clearTimeout(timer);fn(s.docs)},()=>{clearTimeout(timer);if(key){loaded[key]=true}fn(null)})}
+
+function startSubs(){
+ renderPedidos();renderDevs();renderConta();
+ sub('devocionais',async docs=>{if(docs)devs=docs.map(d=>({...d.data(),id:d.id}));loaded.d=true;await resolveNames(devs.map(d=>d.uid));renderDevs()},'d');
+ sub('pessoas',docs=>{if(docs)pessoas=docs.map(d=>({...d.data(),id:d.id}));loadedP=true;renderPessoas()},'pes');
+ sub('relatorios',docs=>{if(docs)relatorios=docs.map(d=>({...d.data(),id:d.id}));loadedR=true;renderPessoas()},'rel');
+ sub('eventos',docs=>{if(docs)eventos=docs.map(d=>({...d.data(),id:d.id}));loadedE=true;renderLit()},'ev');
+ renderPessoas();
+ if(!uid)return;
+ sub('pedidos',async docs=>{if(docs){pedidos=docs.flatMap(d=>(d.data().itens||[]).map(p=>({...p,uid:d.id,key:d.id+'|'+p.id})))}loaded.p=true;await resolveNames(pedidos.map(p=>p.uid));renderPedidos()},'p');
+ sub('oracoes',docs=>{if(!docs)return;orando={};for(const d of docs)for(const k of d.data().ids||[])(orando[k]=orando[k]||[]).push(d.id);renderPedidos()});
+ if(isAdmin){sub('pendentes',docs=>{if(!docs)return;pend=docs.map(d=>({...d.data(),id:d.id}));renderDevs()});
+  sub('envios',async docs=>{if(!docs)return;envios=docs.flatMap(d=>(d.data().itens||[]).map(x=>({...x,uid:d.id})));await resolveNames(envios.map(x=>x.uid));renderDevs()})}
+ else db.doc('envios/'+uid).onSnapshot(s=>{envios=s.exists?(s.data().itens||[]).map(x=>({...x,uid})):[];renderDevs()},()=>{});
+ sub('comentarios',async docs=>{if(!docs)return;coments=docs.flatMap(d=>(d.data().itens||[]).map(c=>({...c,uid:d.id})));await resolveNames(coments.map(c=>c.uid));renderDevs()});
+ if(isDono)sub('users',docs=>{if(docs){usuarios=docs.map(d=>({...d.data(),id:d.id}));renderConta()}});
+ if(isDono)sub('admins',docs=>{if(docs){adminIds=new Set(docs.map(d=>d.id));renderConta()}});
+}
+let usuarios=[],adminIds=new Set();
+const cfgOk=()=>window.firebase&&window.FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey&&!/^COLE/.test(FIREBASE_CONFIG.apiKey);
+function initData(){
+ if(!cfgOk()){renderPedidos();renderDevs();renderPessoas();renderLit();$('#contaBox').innerHTML='<div class="note">O login ainda não foi configurado.</div>';return}
+ firebase.initializeApp(FIREBASE_CONFIG);db=firebase.firestore();auth=firebase.auth();
+ try{db.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
+ $('#acctBtn').hidden=false;$('#acctBtn').onclick=()=>{location.hash='conta'};
+ let primeira=true;
+ auth.onAuthStateChanged(async u=>{
+  if(!primeira){location.reload();return}primeira=false;usuario=u;
+  if(u){uid=u.uid;canWrite=true;isDono=!!(u.email&&window.DONO_EMAIL&&u.email.toLowerCase()===String(DONO_EMAIL).toLowerCase());
+   try{const ref=db.doc('users/'+uid);const d=await ref.get();if(!d.exists)await ref.set({nome:(u.displayName||(u.email||'').split('@')[0]||'Irmão(ã)').slice(0,60),ts:Date.now()});else names[uid]=d.data().nome}catch(e){}
+   try{isAdmin=isDono||(await db.doc('admins/'+uid).get()).exists}catch(e){isAdmin=isDono}
+   $('#acctBtn').textContent=names[uid]||u.displayName||'Minha conta'}
+  else $('#acctBtn').textContent='Entrar';
+  startSubs()});
+}
+function renderConta(){const box=$('#contaBox');if(!auth)return;
+ if(!usuario){box.innerHTML=`<p>Entre para fazer pedidos de oração, orar pelos irmãos e comentar os devocionais. A Bíblia, o hinário e os documentos funcionam sem conta.</p>
+ <button class="btn pri" id="gLogin" style="width:100%">Entrar com Google</button>
+ <h2>Ou com e-mail</h2><form id="eLogin"><label for="eNome">Nome (só para criar conta)</label><input type="text" id="eNome" maxlength="60" autocomplete="name">
+ <label for="eMail">E-mail</label><input type="email" id="eMail" required autocomplete="email"><label for="eSenha">Senha (mínimo 6 caracteres)</label><input type="password" id="eSenha" required minlength="6" autocomplete="current-password">
+ <div class="row" style="margin-top:12px"><button class="btn pri" name="entrar">Entrar</button><button class="btn" type="button" id="eCriar">Criar conta</button><button class="btn sm" type="button" id="eEsqueci">Esqueci a senha</button></div><p class="mute" id="eMsg" role="status"></p></form>`;
+  const msg=t=>$('#eMsg').textContent=t;const err=e=>({'auth/invalid-credential':'E-mail ou senha incorretos.','auth/wrong-password':'E-mail ou senha incorretos.','auth/user-not-found':'Conta não encontrada. Toque em Criar conta.','auth/email-already-in-use':'Este e-mail já tem conta. Toque em Entrar.','auth/weak-password':'A senha precisa ter pelo menos 6 caracteres.','auth/invalid-email':'E-mail inválido.','auth/popup-blocked':'O navegador bloqueou a janela. Tente entrar com e-mail.','auth/popup-closed-by-user':'Login cancelado.'}[e?.code]||'Não foi possível entrar. Tente de novo.');
+  $('#gLogin').onclick=async()=>{try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())}catch(e){if(e?.code==='auth/operation-not-supported-in-this-environment'||e?.code==='auth/popup-blocked'){try{await auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider())}catch(e2){msg(err(e2))}}else msg(err(e))}};
+  $('#eLogin').onsubmit=async e=>{e.preventDefault();msg('Entrando…');try{await auth.signInWithEmailAndPassword($('#eMail').value.trim(),$('#eSenha').value)}catch(x){msg(err(x))}};
+  $('#eCriar').onclick=async()=>{const n=$('#eNome').value.trim();if(!n){msg('Escreva seu nome para criar a conta.');return}msg('Criando conta…');try{const c=await auth.createUserWithEmailAndPassword($('#eMail').value.trim(),$('#eSenha').value);await c.user.updateProfile({displayName:n})}catch(x){msg(err(x))}};
+  $('#eEsqueci').onclick=async()=>{const m=$('#eMail').value.trim();if(!m){msg('Escreva seu e-mail acima.');return}try{await auth.sendPasswordResetEmail(m);msg('Enviamos um e-mail para você criar uma nova senha.')}catch(x){msg(err(x))}};
+  return}
+ const nomeAtual=names[uid]||usuario.displayName||'';
+ box.innerHTML=`<div class="card"><p style="margin:0"><b>${esc(nomeAtual)}</b></p><p class="mute" style="margin:2px 0 0">${esc(usuario.email||'')}${isDono?' · Responsável pelo app':isAdmin?' · Liderança':''}</p>
+ <form id="nomeF" style="margin-top:10px"><label for="nNome">Nome que aparece para os irmãos</label><div class="row"><input type="text" id="nNome" maxlength="60" value="${esc(nomeAtual)}" style="flex:1 1 180px;width:auto"><button class="btn sm">Salvar</button></div></form>
+ <div class="row" style="margin-top:12px"><button class="btn" id="sair">Sair</button></div></div>
+ ${isDono?`<h2>Liderança</h2><p class="mute">Quem estiver marcado pode aprovar devocionais e moderar pedidos e comentários.</p><div>${usuarios.filter(x=>x.id!==uid).sort((a,b)=>String(a.nome).localeCompare(String(b.nome))).map(x=>`<div class="urow"><span>${esc(x.nome||'Irmão(ã)')}</span><button class="btn sm ${adminIds.has(x.id)?'pri':''}" data-adm="${esc(x.id)}">${adminIds.has(x.id)?'Liderança ✓':'Tornar liderança'}</button></div>`).join('')||'<p class="mute">Ninguém mais entrou no app ainda.</p>'}</div>
+ ${loadedP&&!pessoas.length?'<h2>Liderança inicial</h2><p class="mute">Carrega os líderes e missionários já cadastrados, com foto.</p><button class="btn pri" id="seedP">Carregar liderança</button>':''}
+ ${loaded.d&&!devs.length?'<h2>Primeiros devocionais</h2><p class="mute">Carrega a série de 4 semanas (28 devocionais) já aprovada.</p><button class="btn pri" id="seed">Carregar devocionais iniciais</button><p class="mute" id="seedMsg"></p>':''}`:''}`;
+ $('#sair').onclick=()=>auth.signOut();
+ $('#nomeF').onsubmit=async e=>{e.preventDefault();const n=$('#nNome').value.trim().slice(0,60);if(!n)return;try{await db.doc('users/'+uid).set({nome:n,ts:Date.now()});names[uid]=n;$('#acctBtn').textContent=n;renderConta()}catch(x){}};
+ for(const b of box.querySelectorAll('[data-adm]'))b.onclick=async()=>{b.disabled=true;const id=b.dataset.adm;try{if(adminIds.has(id))await db.doc('admins/'+id).delete();else await db.doc('admins/'+id).set({ts:Date.now()})}catch(x){b.disabled=false}};
+ const sp=$('#seedP');if(sp)sp.onclick=async()=>{sp.disabled=true;try{const L=await (await fetch('pessoas-iniciais.json')).json();const batch=db.batch();for(const d of L){const {id,...rest}=d;batch.set(db.doc('pessoas/'+id),{...rest,ts:Date.now()})}await batch.commit()}catch(x){sp.disabled=false}};
+ const seedMsg=t=>{const m=$('#seedMsg');if(m)m.textContent=t};const sd=$('#seed');if(sd)sd.onclick=async()=>{sd.disabled=true;seedMsg('Carregando…');try{const L=await (await fetch('devocionais-iniciais.json')).json();const batch=db.batch();for(const d of L){const {id,...rest}=d;batch.set(db.doc('devocionais/'+id),{...rest,aprovadoPor:uid})}await batch.commit();seedMsg('Pronto: '+L.length+' devocionais carregados.')}catch(x){seedMsg('Não foi possível carregar.');sd.disabled=false}};
+}
+
+/* ---------- Liderança e missionários ---------- */
+let pessoas=[],seg='lider',loadedP=false,editP=null;
+const SEGTXT={lider:{intro:'Quem pastoreia e serve na liderança da igreja.',add:'Adicionar líder',fn:'Cargo ou função',fnPh:'Ex.: Pastor titular, Diácono, Líder de jovens',vazio:'A lista da liderança ainda não foi preenchida.'},
+ missionario:{intro:'Missionários enviados e sustentados pela igreja, com os relatórios do campo. Lembre-se deles em suas orações.',add:'Adicionar missionário',fn:'Campo missionário',fnPh:'Ex.: Sertão do Ceará · Missão Novas Tribos',vazio:'A lista de missionários ainda não foi preenchida.'}};
+const ini=n=>String(n||'?').trim().split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+function renderPessoas(){const T=SEGTXT[seg];$('#segIntro').textContent=T.intro;renderRel();
+ for(const b of document.querySelectorAll('[data-seg]'))b.setAttribute('aria-selected',b.dataset.seg===seg);
+ const ed=editP&&pessoas.find(p=>p.id===editP);
+ $('#pForm2').innerHTML=isAdmin?`<details class="card"${ed?' open':''}><summary>${ed?'Editar: '+esc(ed.nome):'+ '+T.add}</summary><form id="pesF">
+ <label for="pesN">Nome</label><input type="text" id="pesN" required maxlength="80" value="${esc(ed?.nome||'')}">
+ <label for="pesF1">${T.fn}</label><input type="text" id="pesF1" maxlength="100" placeholder="${T.fnPh}" value="${esc(ed?.funcao||'')}">
+ <label for="pesD">Sobre (opcional)</label><textarea id="pesD" maxlength="1500" style="min-height:90px" placeholder="${seg==='missionario'?'Família, há quanto tempo está no campo, como a igreja pode orar':'Família, desde quando serve na igreja, ministérios'}">${esc(ed?.descricao||'')}</textarea>
+ <label for="pesO">Ordem na lista</label><input type="text" inputmode="numeric" id="pesO" maxlength="3" value="${esc(ed?.ordem??'')}" placeholder="1, 2, 3…">
+ <div class="row" style="margin-top:12px"><button class="btn pri">${ed?'Salvar':'Adicionar'}</button>${ed?'<button type="button" class="btn" id="pesCancel">Cancelar</button>':''}<span class="mute" id="pesMsg" role="status"></span></div></form></details>`:'';
+ const f=$('#pesF');if(f){f.onsubmit=salvarPessoa;const c=$('#pesCancel');if(c)c.onclick=()=>{editP=null;renderPessoas()}}
+ if(!db){$('#pessoasList').innerHTML='<div class="note">Estas informações estarão disponíveis em breve.</div>';return}
+ if(!loadedP)return;
+ const L=pessoas.filter(p=>p.tipo===seg).sort((a,b)=>(+a.ordem||999)-(+b.ordem||999)||String(a.nome).localeCompare(String(b.nome)));
+ $('#pessoasList').innerHTML=L.length?L.map(p=>`${(()=>{const fok=/^fotos\/[\w.-]+$/.test(p.foto||'');const ban=fok&&p.tipo==='missionario';return `<article class="card ${ban?'mcard':'pcard'}">${ban?`<img class="banner" src="${esc(p.foto)}" alt="Foto: ${esc(p.nome)}" loading="lazy">`:`<div class="av" aria-hidden="true">${fok?`<img src="${esc(p.foto)}" alt="" loading="lazy">`:esc(ini(p.nome))}</div>`}`})()}<div style="flex:1">
+ <h3>${esc(p.nome)}</h3>${p.funcao?`<div class="fn">${esc(p.funcao)}</div>`:''}${p.descricao?`<p>${esc(p.descricao)}</p>`:''}
+ ${p.tipo==='missionario'?relDoMis(p):''}
+ ${isAdmin?`<div class="row" style="margin-top:10px"><button class="btn sm" data-editp="${esc(p.id)}">Editar</button><button class="btn sm" data-delpes="${esc(p.id)}">Excluir</button></div>`:''}</div></article>`).join('')
+  :`<div class="empty">${T.vazio}${isAdmin?' Use o botão acima para adicionar.':''}</div>`}
+async function salvarPessoa(e){e.preventDefault();const st=$('#pesMsg');const b=e.target.querySelector('button');b.disabled=true;st.textContent='Salvando…';
+ const dados={tipo:seg,nome:$('#pesN').value.trim(),funcao:$('#pesF1').value.trim(),descricao:$('#pesD').value.trim(),ordem:parseInt($('#pesO').value)||null,ts:Date.now()};if(editP){const o=pessoas.find(p=>p.id===editP);if(o&&o.foto)dados.foto=o.foto}
+ try{if(editP)await db.doc('pessoas/'+editP).set(dados);else await db.collection('pessoas').add(dados);editP=null;renderPessoas()}catch(x){st.textContent='Não foi possível salvar.';b.disabled=false}}
+document.addEventListener('click',async e=>{
+ const sb=e.target.closest('[data-seg]');if(sb){seg=sb.dataset.seg;editP=null;renderPessoas();return}
+ const ep=e.target.closest('[data-editp]');if(ep){editP=ep.dataset.editp;renderPessoas();scrollTo({top:0,behavior:'smooth'});return}
+ const dp=e.target.closest('[data-delpes]');if(dp){if(dp.dataset.sure!=='1'){dp.dataset.sure='1';dp.textContent='Confirmar exclusão?';return}dp.disabled=true;try{await db.doc('pessoas/'+dp.dataset.delpes).delete()}catch(x){dp.disabled=false}}});
+
+
+/* ---------- Relatórios missionários ---------- */
+let relatorios=[],loadedR=false,relAbertos=new Set();
+const nomeMis=id=>(pessoas.find(p=>p.id===id)||{}).nome||'Missionário';
+function relItem(r,comNome){return `<details class="art"><summary><span><b>${esc(r.titulo)}</b> <small>${esc(fmtData(r.data))}${comNome?' · '+esc(nomeMis(r.missionario)):''}</small></span></summary><div class="tbody">
+ ${r.texto?`<p style="white-space:pre-line;margin:0 0 8px">${esc(r.texto)}</p>`:''}${/^https:\/\//.test(r.link||'')?`<a class="btn sm" href="${esc(r.link)}" target="_blank" rel="noopener">Abrir relatório completo ↗</a>`:''}
+ ${isAdmin?`<div class="row" style="margin-top:8px"><button class="btn sm" data-delrel="${esc(r.id)}">Excluir relatório</button></div>`:''}</div></details>`}
+const ordRel=L=>L.slice().sort((a,b)=>String(b.data).localeCompare(String(a.data))||b.ts-a.ts);
+function relDoMis(p){const L=ordRel(relatorios.filter(r=>r.missionario===p.id));if(!L.length)return '';const ab=relAbertos.has(p.id);
+ return `<div style="margin-top:10px"><button class="btn sm" data-relmis="${esc(p.id)}" aria-expanded="${ab}">${ab?'Ocultar relatórios':'Relatórios ('+L.length+')'}</button>${ab?`<div style="margin-top:6px">${L.map(r=>relItem(r,false)).join('')}</div>`:''}</div>`}
+function renderRel(){const box=$('#relBox');if(!box)return;if(seg!=='missionario'||!db||!loadedR){box.innerHTML='';return}
+ const mis=pessoas.filter(p=>p.tipo==='missionario');const recentes=ordRel(relatorios).slice(0,3);
+ box.innerHTML=(isAdmin&&mis.length?`<details class="card"><summary>+ Novo relatório missionário</summary><form id="relF">
+ <label for="rMis">Missionário</label><select id="rMis">${mis.map(p=>`<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join('')}</select>
+ <label for="rTit">Título</label><input type="text" id="rTit" required maxlength="120" placeholder="Ex.: Relatório de novembro">
+ <label for="rData">Data</label><input type="date" id="rData" value="${hoje()}" required>
+ <label for="rTxt">Resumo do relatório</label><textarea id="rTxt" maxlength="5000" style="min-height:140px" placeholder="Notícias do campo, conquistas, desafios e motivos de oração"></textarea>
+ <label for="rLink">Link do relatório completo (opcional)</label><input type="url" id="rLink" maxlength="300" placeholder="https:// (PDF no Google Drive, fotos, vídeo…)">
+ <div class="row" style="margin-top:12px"><button class="btn pri">Publicar relatório</button><span class="mute" id="rMsg" role="status"></span></div></form></details>`:'')
+ +(recentes.length?`<div class="card"><h2 style="margin:0 0 4px;font-size:17px">Relatórios recentes</h2>${recentes.map(r=>relItem(r,true)).join('')}</div>`:'');
+ const f=$('#relF');if(f)f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button');b.disabled=true;$('#rMsg').textContent='Publicando…';
+  try{await db.collection('relatorios').add({missionario:$('#rMis').value,titulo:$('#rTit').value.trim(),data:$('#rData').value||hoje(),texto:$('#rTxt').value.trim(),link:$('#rLink').value.trim(),uid,ts:Date.now()})}catch(x){$('#rMsg').textContent='Não foi possível publicar.';b.disabled=false}}}
+document.addEventListener('click',async e=>{
+ const rm=e.target.closest('[data-relmis]');if(rm){const id=rm.dataset.relmis;relAbertos.has(id)?relAbertos.delete(id):relAbertos.add(id);renderPessoas();return}
+ const dr=e.target.closest('[data-delrel]');if(dr){if(dr.dataset.sure!=='1'){dr.dataset.sure='1';dr.textContent='Confirmar exclusão?';return}dr.disabled=true;try{await db.doc('relatorios/'+dr.dataset.delrel).delete()}catch(x){dr.disabled=false}}});
+/* ---------- Liturgia ---------- */
+let eventos=[],loadedE=false,litFiltro='',editEv=null,evAbertos=null;
+document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches||!d.matches('details.ev'))return;evAbertos=evAbertos||new Set();d.open?evAbertos.add(d.dataset.evid):evAbertos.delete(d.dataset.evid)},true);
+const GRUPOS=['Igreja toda','Homens','Mulheres','Jovens','Adolescentes','Crianças'];
+const DSEM=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'],MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function setLseg(v){$('#tabHin').setAttribute('aria-selected',v==='hin');$('#tabLit').setAttribute('aria-selected',v==='lit');$('#hinWrap').hidden=v!=='hin';$('#litView').hidden=v!=='lit';if(v==='lit')renderLit()}
+function evForm(ev){return `<form class="evF" data-ev="${esc(ev?.id||'')}"><label>Nome do evento</label><input type="text" name="nome" required maxlength="80" placeholder="Ex.: Culto de jovens" value="${esc(ev?.nome||'')}">
+ <label>Grupo</label><select name="grupo">${GRUPOS.map(g=>`<option${ev?.grupo===g?' selected':''}>${g}</option>`).join('')}</select>
+ <div class="row"><div style="flex:1 1 140px"><label>Data</label><input type="date" name="data" required value="${esc(ev?.data||hoje())}"></div><div style="flex:1 1 110px"><label>Horário</label><input type="text" name="hora" maxlength="10" placeholder="19h30" value="${esc(ev?.hora||'')}"></div></div>
+ <label>Local (opcional)</label><input type="text" name="local" maxlength="80" placeholder="Ex.: Templo, casa do irmão…" value="${esc(ev?.local||'')}">
+ <div class="row" style="margin-top:12px"><button class="btn pri">${ev?'Salvar evento':'Criar evento'}</button>${ev?'<button type="button" class="btn" data-evcancel>Cancelar</button>':''}<span class="mute" role="status"></span></div></form>`}
+function fmtEv(d){const [y,m,dd]=String(d).split('-').map(Number);const dt=new Date(y,m-1,dd);return{dia:dd,mes:MES[m-1],sem:DSEM[dt.getDay()]}}
+function louvorHtml(ev,l,i,n){const hino=l.hino?H.findIndex(h=>h.n===+l.hino):-1;
+ return `<div class="lv"><span class="n">${i+1}</span><div style="flex:1">
+ <b>${esc(l.titulo||(hino>=0?H[hino].t:'Hino '+l.hino))}</b>${l.tom?`<span class="tom">Tom ${esc(l.tom)}</span>`:''}
+ ${l.artista?`<div class="mute">${esc(l.artista)}</div>`:''}
+ <div class="row" style="margin-top:6px">${l.hino?(hino>=0?`<button class="btn sm" data-hino="${hino}">Cantor Cristão nº ${esc(l.hino)}</button>`:`<span class="mute">Cantor Cristão nº ${esc(l.hino)} (letra fora do app)</span>`):''}
+ ${/^https:\/\//.test(l.link||'')?`<a class="btn sm" href="${esc(l.link)}" target="_blank" rel="noopener">Ouvir / cifra ↗</a>`:''}
+ ${isAdmin?`${i>0?`<button class="btn sm" data-mv="${esc(ev.id)}|${i}|-1" aria-label="Subir">↑</button>`:''}${i<n-1?`<button class="btn sm" data-mv="${esc(ev.id)}|${i}|1" aria-label="Descer">↓</button>`:''}<button class="btn sm" data-rml="${esc(ev.id)}|${i}">Remover</button>`:''}</div></div></div>`}
+function evCard(ev,aberto){const f=fmtEv(ev.data);const L=ev.louvores||[];
+ if(editEv===ev.id)return `<div class="card">${evForm(ev)}</div>`;
+ return `<details class="topic ev" data-evid="${esc(ev.id)}"${(evAbertos?evAbertos.has(ev.id):aberto)?' open':''}><summary><div class="dt"><small>${f.sem}</small><b>${f.dia}</b><small>${f.mes}</small></div><div style="flex:1"><span class="chip">${esc(ev.grupo||'Igreja toda')}</span><h3>${esc(ev.nome)}</h3><div class="mute">${esc([ev.hora,ev.local].filter(Boolean).join(' · '))}${L.length?' · '+L.length+' louvor'+(L.length>1?'es':''):''}</div></div></summary>
+ <div class="tbody">${L.map((l,i)=>louvorHtml(ev,l,i,L.length)).join('')||'<p class="mute">Os louvores ainda não foram definidos.</p>'}
+ ${isAdmin?`<details class="card" style="margin-top:12px"><summary>+ Adicionar louvor</summary><form class="lvF" data-ev="${esc(ev.id)}">
+ <label>Título do louvor</label><input type="text" name="titulo" maxlength="100">
+ <label>Ou número do hino no Cantor Cristão</label><input type="text" name="hino" inputmode="numeric" maxlength="4" placeholder="Ex.: 15">
+ <div class="row"><div style="flex:2 1 160px"><label>Artista / ministério</label><input type="text" name="artista" maxlength="80"></div><div style="flex:1 1 80px"><label>Tom</label><input type="text" name="tom" maxlength="6" placeholder="G, Am…"></div></div>
+ <label>Link para ouvir ou ver a cifra (opcional)</label><input type="url" name="link" maxlength="300" placeholder="https://">
+ <div class="row" style="margin-top:12px"><button class="btn pri">Adicionar</button><span class="mute" role="status"></span></div></form></details>
+ <div class="row" style="margin-top:12px"><button class="btn sm" data-editev="${esc(ev.id)}">Editar evento</button><button class="btn sm" data-delev="${esc(ev.id)}">Excluir evento</button></div>`:''}</div></details>`}
+function renderLit(){
+ $('#litChips').innerHTML=['',...GRUPOS].map(g=>`<button data-lf="${g}" aria-pressed="${litFiltro===g}">${g||'Todos'}</button>`).join('');
+ $('#evForm').innerHTML=isAdmin&&!editEv?`<details class="card"><summary>+ Novo evento</summary>${evForm(null)}</details>`:'';
+ if(!db){$('#evList').innerHTML='<div class="note">A liturgia estará disponível em breve.</div>';return}
+ if(!loadedE)return;
+ const h=hoje(),F=eventos.filter(e=>!litFiltro||e.grupo===litFiltro);
+ const prox=F.filter(e=>e.data>=h).sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora));
+ const pass=F.filter(e=>e.data<h).sort((a,b)=>b.data.localeCompare(a.data)).slice(0,20);
+ $('#evList').innerHTML=(prox.length?prox.map((e,i)=>evCard(e,i===0)).join(''):`<div class="empty">Nenhum evento marcado${litFiltro?' para '+esc(litFiltro):''}.${isAdmin?' Use “Novo evento” para criar.':''}</div>`)
+  +(pass.length?`<h2>Eventos anteriores</h2>`+pass.map(e=>evCard(e,false)).join(''):'');
+ for(const f of document.querySelectorAll('.evF'))f.onsubmit=salvarEv;
+ for(const f of document.querySelectorAll('.lvF'))f.onsubmit=addLouvor}
+async function salvarEv(e){e.preventDefault();const f=e.target,st=f.querySelector('[role=status]'),b=f.querySelector('button');b.disabled=true;st.textContent='Salvando…';
+ const d={nome:f.nome.value.trim(),grupo:f.grupo.value,data:f.data.value||hoje(),hora:f.hora.value.trim(),local:f.local.value.trim(),uid,ts:Date.now()};
+ try{if(f.dataset.ev){const o=eventos.find(x=>x.id===f.dataset.ev);await db.doc('eventos/'+f.dataset.ev).set({...d,louvores:o?.louvores||[]})}else await db.collection('eventos').add({...d,louvores:[]});editEv=null;renderLit()}catch(x){st.textContent='Não foi possível salvar.';b.disabled=false}}
+async function setLouvores(id,L){const o=eventos.find(x=>x.id===id);if(!o)return;const {id:_,...rest}=o;await db.doc('eventos/'+id).set({...rest,louvores:L})}
+async function addLouvor(e){e.preventDefault();const f=e.target,st=f.querySelector('[role=status]'),b=f.querySelector('button');
+ const t=f.titulo.value.trim(),hn=parseInt(f.hino.value)||null;if(!t&&!hn){st.textContent='Preencha o título ou o número do hino.';return}
+ b.disabled=true;st.textContent='Adicionando…';const hx=hn?H.find(x=>x.n===hn):null;
+ const o=eventos.find(x=>x.id===f.dataset.ev);const L=[...(o?.louvores||[]),{titulo:t||(hx?hx.t:''),hino:hn,artista:f.artista.value.trim()||(hn?'Cantor Cristão':''),tom:f.tom.value.trim(),link:f.link.value.trim()}];
+ try{await setLouvores(f.dataset.ev,L.slice(0,40))}catch(x){st.textContent='Não foi possível adicionar.';b.disabled=false}}
+document.addEventListener('click',async e=>{const t=e.target;
+ const ls=t.closest('[data-lseg]');if(ls){setLseg(ls.dataset.lseg);return}
+ const lf=t.closest('[data-lf]');if(lf){litFiltro=lf.dataset.lf;renderLit();return}
+ const hb=t.closest('[data-hino]');if(hb){setLseg('hin');openHymn(+hb.dataset.hino);return}
+ const ee=t.closest('[data-editev]');if(ee){editEv=ee.dataset.editev;renderLit();return}
+ if(t.closest('[data-evcancel]')){editEv=null;renderLit();return}
+ const de=t.closest('[data-delev]');if(de){if(de.dataset.sure!=='1'){de.dataset.sure='1';de.textContent='Confirmar exclusão?';return}de.disabled=true;try{await db.doc('eventos/'+de.dataset.delev).delete()}catch(x){de.disabled=false}return}
+ const mv=t.closest('[data-mv]');if(mv){const [id,i,d]=mv.dataset.mv.split('|');const o=eventos.find(x=>x.id===id);const L=[...(o.louvores||[])];const a=+i,b2=a+ +d;[L[a],L[b2]]=[L[b2],L[a]];mv.disabled=true;try{await setLouvores(id,L)}catch(x){mv.disabled=false}return}
+ const rm=t.closest('[data-rml]');if(rm){const [id,i]=rm.dataset.rml.split('|');if(rm.dataset.sure!=='1'){rm.dataset.sure='1';rm.textContent='Confirmar?';return}const o=eventos.find(x=>x.id===id);const L=(o.louvores||[]).filter((_,k)=>k!==+i);rm.disabled=true;try{await setLouvores(id,L)}catch(x){rm.disabled=false}}});
+/* ---------- Instalação ---------- */
+let promptInst=null;
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();promptInst=e;const b=$('#instalar');b.hidden=false;b.innerHTML='<b>Instale o app IBSB</b> no seu celular para abrir direto da tela inicial.<div class="row" style="margin-top:8px"><button class="btn sm pri" id="instBtn">Instalar</button></div>';$('#instBtn').onclick=async()=>{promptInst.prompt();await promptInst.userChoice;b.hidden=true}});
+const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+if(!standalone&&/iphone|ipad|ipod/i.test(navigator.userAgent)){const b=$('#instalar');b.hidden=false;b.innerHTML='<b>Instale o app IBSB:</b> no Safari, toque em <b>Compartilhar</b> (o quadrado com a seta) e depois em <b>Adicionar à Tela de Início</b>.'}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});let rec=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(rec)return;rec=true;location.reload()})}
+
+route();loadBible();
+initData();
+}
+</script>
+</body>
+</html>
